@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:padding="20dp"
+    >
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="[New message]"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:textSize="24sp"
+    />
+
+
+    <TextView
+        android:layout_marginTop="10dp"
+        android:id="@+id/text"
+        android:layout_below="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:text="[place holder]"
+    />
+
+    <LinearLayout
+        android:layout_marginTop="10dp"
+        android:layout_below="@+id/text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="2"
+        android:orientation="horizontal"
+        android:padding="0dp"
+        >
+
+        <Button
+            android:id="@+id/open"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="[Open]"
+            android:maxLines="1"
+            />
+
+        <Button
+            android:id="@+id/close"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="[Close]"
+            android:maxLines="1"
+        />
+
+    </LinearLayout>
+
+
+
+</RelativeLayout>

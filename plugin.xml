@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin xmlns:android="http://schemas.android.com/apk/res/android" id="cordova-plugin-socket-service"
+    version="0.0.1"
+    xmlns="http://apache.org/cordova/ns/plugins/1.0">
+    <name>SocketService</name>
+    <js-module name="SocketService" src="www/SocketService.js">
+        <clobbers target="socketservice" />
+    </js-module>
+    <platform name="android">
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="SocketService">
+                <param name="android-package" value="com.socketservice.SocketService" />
+            </feature>
+            <feature name="BroadcastService">
+                <param name="android-package" value="com.socketservice.BroadcastService" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.INTERNET"/>
+            <uses-permission android:name="android.permission.WAKE_LOCK"/>
+            <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES"/>
+        </config-file>
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <service android:name="com.socketservice.NotificationSocketService" android:stopWithTask="false">
+            </service>
+            <activity
+                    android:name="com.socketservice.AlertActivity"
+                    android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
+                    android:label="@string/app_name"
+                    android:launchMode="singleTask"
+                    android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar">
+            </activity>
+        </config-file>
+
+        <source-file src="src/android/AlertActivity.java"
+            target-dir="src/com/socketservice" />
+        <source-file src="src/android/layout/activity_alert.xml"
+            target-dir="res/layout"/>
+        <source-file src="src/android/BroadcastService.java"
+            target-dir="src/com/socketservice" />
+        <source-file src="src/android/SocketService.java"
+            target-dir="src/com/socketservice" />
+        <source-file src="src/android/NotificationSocketService.java"
+            target-dir="src/com/socketservice" />
+        <source-file src="src/android/Language.java"
+                     target-dir="src/com/socketservice" />
+
+        <framework src="io.socket:socket.io-client:0.8.2" />
+    </platform>
+</plugin>
