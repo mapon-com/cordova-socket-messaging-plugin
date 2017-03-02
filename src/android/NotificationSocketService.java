@@ -286,7 +286,7 @@ public class NotificationSocketService extends Service {
         Intent alertIntent;
         alertIntent = new Intent(getApplicationContext(), AlertActivity.class);
 
-        alertIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        alertIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
         alertIntent.putExtra("event", event);
         alertIntent.putExtra("data", payload.toString());
         alertIntent.putExtra("alertMessage", alertMessage);
