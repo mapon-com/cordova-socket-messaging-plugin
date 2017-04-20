@@ -132,7 +132,6 @@ public class NotificationSocketService extends Service {
 
     private void connect() {
         Log.d("NotificationService", "connect METHOD");
-
         try {
             if (socket == null) {
                 IO.Options options = new IO.Options();
