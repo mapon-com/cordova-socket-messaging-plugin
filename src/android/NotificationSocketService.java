@@ -149,7 +149,7 @@ public class NotificationSocketService extends Service {
                 socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
-                        Log.d("NotificationService", "EVENT_CONNECT");
+                        connectionEstablishedEvent();
                     }
                 });
                 socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
@@ -200,8 +200,28 @@ public class NotificationSocketService extends Service {
                     }
                 });
                 socket.connect();
+            } else {
+                connectionEstablishedEvent();
             }
         } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void connectionEstablishedEvent() {
+        try {
+            Log.d("NotificationService", "EVENT_CONNECT");
+
+            JSONObject payload = new JSONObject();
+            payload.put("type", Socket.EVENT_CONNECT);
+
+            if (isMainAppForeground()) {
+                Log.d("NotificationService", "APP RUNNING FOREGROUND, BROADCASTING EVENT");
+                broadcastEvent("socket_event", payload);
+            }
+
+            wakeUp();
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -224,6 +244,7 @@ public class NotificationSocketService extends Service {
     }
 
     private void listenBroadcasts() {
+        stopListeningBroadcasts();
         notificationReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
