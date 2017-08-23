@@ -1,0 +1,25 @@
+{
+  "name": "cordova-socket-messaging-plugin",
+  "version": "0.0.1",
+  "description": "background communication service for mapon go",
+  "cordova": {
+    "id": "cordova-plugin-socket-service",
+    "platforms": [
+      "android"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mapon-com/cordova-socket-messaging-plugin.git"
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "author": "Rudolfs Pumpurs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mapon-com/cordova-socket-messaging-plugin/issues"
+  },
+  "homepage": "https://github.com/mapon-com/cordova-socket-messaging-plugin#readme"
+}
