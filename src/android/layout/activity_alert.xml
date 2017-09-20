@@ -43,6 +43,7 @@
             android:layout_height="wrap_content"
             android:text="[Open]"
             android:maxLines="1"
+            android:filterTouchesWhenObscured="true"
             />
 
         <Button
@@ -52,6 +53,7 @@
             android:layout_height="wrap_content"
             android:text="[Close]"
             android:maxLines="1"
+            android:filterTouchesWhenObscured="true"
         />
 
     </LinearLayout>
