@@ -39,6 +39,7 @@ public class SocketService extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+        webView.getView().setFilterTouchesWhenObscured(true);
         if (action.equals("startService")) {
             if (args.length() != 1) {
                 callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.INVALID_ACTION));
