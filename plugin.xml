@@ -46,6 +46,6 @@
         <source-file src="src/android/Language.java"
                      target-dir="src/com/socketservice" />
 
-        <framework src="io.socket:socket.io-client:0.8.2" />
+        <framework src="io.socket:socket.io-client:+" />
     </platform>
 </plugin>
