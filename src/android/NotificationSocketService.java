@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
@@ -24,10 +25,13 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.mapon.mapongo.R;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.util.Date;
 import java.util.List;
 
 import io.socket.client.Ack;
@@ -60,6 +64,8 @@ public class NotificationSocketService extends Service {
     private static String host;
     private static Integer port;
 
+    private static String appName = "Driver App";
+
     private String connectUrl;
 
     private static PowerManager.WakeLock wakeLock;
@@ -73,6 +79,10 @@ public class NotificationSocketService extends Service {
 
     public static void start(Context context, String connectUrl) {
         Log.d("NotificationService", "NotificationSocketService STARTED");
+
+        // remove all notifications from status bar. This method gets called when app is started
+        NotificationManager nMgr = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        nMgr.cancelAll();
 
         Intent intent = new Intent(context, NotificationSocketService.class);
         intent.setAction(ACTION_START);
@@ -127,6 +137,18 @@ public class NotificationSocketService extends Service {
                 stopSelf();
             }
         }
+
+        appName = getApplicationName();
+
+        Notification notification = new NotificationCompat.Builder(this, appName.replaceAll(" ", "_") + "_channel")
+                .setContentTitle(appName)
+                .setContentText("Service running")
+                .setSmallIcon(R.drawable.ic_go_colour)
+                .setPriority(Notification.PRIORITY_MIN)
+                .setOngoing(true).build();
+
+        startForeground(101, notification);
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -143,6 +165,8 @@ public class NotificationSocketService extends Service {
                     @Override
                     public void call(Object... args) {
                         Log.d("NotificationService", "EVENT_RECONNECT");
+                        Log.d("NotificationService", "Emit getUndelivered");
+                        socket.emit("getUndelivered");
                     }
                 });
                 socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
@@ -175,8 +199,9 @@ public class NotificationSocketService extends Service {
                             JSONObject payload = eventData.getJSONObject("data");
                             boolean alert = payload.optBoolean("alert", false);
                             String alertMessage = null;
+                            String notificationMessage = null;
                             if (alert) {
-                                alertMessage = payload.optString("alertMessage", "empty message");
+                                alertMessage = notificationMessage = payload.optString("alertMessage", "empty message");
                             }
                             Log.d("NotificationService", "EVENT " + event);
                             Log.d("NotificationService", "PAYLOAD " + payload.toString());
@@ -186,8 +211,28 @@ public class NotificationSocketService extends Service {
                                 broadcastEvent(event, payload);
                             } else {
                                 if (alert) {
+
+                                    boolean undeliveredEvent = payload.optBoolean("unsent", false);
+                                    if (undeliveredEvent) {
+                                        Language language = new Language(getApplicationContext());
+                                        String undeliveredMessage = "";
+                                        try {
+                                            undeliveredMessage = "+" + payload.getJSONObject("dashboard").get("messages").toString() + " " + language.getLanguageEntry("new_undelivered_messages");
+                                        } catch (JSONException e) {
+                                            Log.d("NotificationService", "NO ADDITIONAL MESSAGES");
+                                        }
+
+                                        try {
+                                            undeliveredMessage += "\n+" + payload.getJSONObject("dashboard").get("tasks").toString() + " " + language.getLanguageEntry("new_undelivered_tasks");
+                                        } catch (JSONException e) {
+                                            Log.d("NotificationService", "NO ADDITIONAL TASKS");
+                                        }
+
+                                        notificationMessage = undeliveredMessage;
+                                    }
+
                                     Log.d("NotificationService", "APP RUNNING BACKGROUND, SHOWING NOTIFICATION AND ALERT AND BROADCASTING");
-                                    showNotification(event, payload, alertMessage);
+                                    showNotification(event, payload, notificationMessage);
                                     showAlert(event, payload, alertMessage);
                                 }
                             }
@@ -229,7 +274,7 @@ public class NotificationSocketService extends Service {
         boolean isMainAppForeground = false;
         ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         List<ActivityManager.RunningAppProcessInfo> runningProcessInfo = activityManager.getRunningAppProcesses();
-        if (runningProcessInfo != null) {
+        if (runningProcessInfo != null && AlertActivity.isAlertShown == 0) {
             for (ActivityManager.RunningAppProcessInfo appProcess : runningProcessInfo) {
                 Log.d("NotificationService", String.valueOf(appProcess.importance));
                 if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
@@ -295,9 +340,9 @@ public class NotificationSocketService extends Service {
         Bundle b = new Bundle();
         b.putString("userdata",
                 "{" +
-                    "event: '" + event + "'," +
-                    "data: " + payload.toString() +
-                "}");
+                        "event: '" + event + "'," +
+                        "data: " + payload.toString() +
+                        "}");
         intent.putExtras(b);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcastSync(intent);
     }
@@ -322,11 +367,10 @@ public class NotificationSocketService extends Service {
         }
 
         String packageName = getApplicationContext().getPackageName();
-        Resources resources = getApplicationContext().getResources();
 
-        final NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext());
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), appName.replaceAll(" ", "_") + "_channel");
         builder
-                .setSmallIcon(resources.getIdentifier("icon", "mipmap", packageName))
+                .setSmallIcon(R.drawable.ic_go_colour)
                 .setWhen(System.currentTimeMillis()).setAutoCancel(true)
                 .setContentTitle(messageTitle)
                 .setDefaults(Notification.DEFAULT_ALL)
@@ -344,11 +388,12 @@ public class NotificationSocketService extends Service {
         NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         builder.setContentIntent(contentIntent);
         Notification n = builder.build();
-        nm.notify(1, n);
+        nm.notify((int) ((new Date().getTime() / 1000L) % Integer.MAX_VALUE), n);
     }
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
+        Log.d("NotificationService", "onTaskRemoved METHOD");
         Intent restartService = new Intent(getApplicationContext(), this.getClass());
         restartService.setPackage(getPackageName());
         PendingIntent restartServicePI = PendingIntent.getService(
@@ -366,5 +411,11 @@ public class NotificationSocketService extends Service {
                 wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "my_wakelock");
             }
         }
+    }
+
+    public String getApplicationName() {
+        ApplicationInfo applicationInfo = getApplicationContext().getApplicationInfo();
+        int stringId = applicationInfo.labelRes;
+        return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : getApplicationContext().getString(stringId);
     }
 }

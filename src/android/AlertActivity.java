@@ -13,10 +13,12 @@ import android.widget.TextView;
 
 public class AlertActivity extends Activity {
     private static final String BROADCAST_INCOMING_EVENT = "incoming.event";
+    public static int isAlertShown = 0;
 
     public void onCreate(Bundle state){
         super.onCreate(state);
 
+        isAlertShown++;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
@@ -82,11 +84,13 @@ public class AlertActivity extends Activity {
         findViewById(closeViewId).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                NotificationManager nMgr = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-                nMgr.cancelAll();
-
                 finish();
             }
         });
+    }
+
+    public void onDestroy() {
+        isAlertShown--;
+        super.onDestroy();
     }
 }
