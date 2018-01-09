@@ -2,20 +2,19 @@ package com.socketservice;
 
 import android.app.ActivityManager;
 import android.app.AlarmManager;
+import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ServiceInfo;
-import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -24,8 +23,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-
-import com.mapon.mapongo.R;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -272,14 +269,22 @@ public class NotificationSocketService extends Service {
 
     private boolean isMainAppForeground() {
         boolean isMainAppForeground = false;
+        KeyguardManager km = (KeyguardManager) getApplicationContext().getSystemService(Context.KEYGUARD_SERVICE);
+        PowerManager pm = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
         ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+
+        boolean isPhoneLocked = km.inKeyguardRestrictedInputMode();
+        boolean isSceenAwake = (Build.VERSION.SDK_INT < 20 ? pm.isScreenOn() : pm.isInteractive());
+
         List<ActivityManager.RunningAppProcessInfo> runningProcessInfo = activityManager.getRunningAppProcesses();
         if (runningProcessInfo != null && AlertActivity.isAlertShown == 0) {
             for (ActivityManager.RunningAppProcessInfo appProcess : runningProcessInfo) {
                 Log.d("NotificationService", String.valueOf(appProcess.importance));
                 if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
-                        && appProcess.processName.equals(getApplication().getPackageName())) {
+                        && appProcess.processName.equals(getApplication().getPackageName())
+                            && !isPhoneLocked && isSceenAwake) {
                     isMainAppForeground = true;
+                    break;
                 }
             }
         }
