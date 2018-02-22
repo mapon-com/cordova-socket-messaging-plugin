@@ -11,6 +11,9 @@ var socketservice = {
     stopService: function (arg0, success, error) {
         return exec(success, error, "SocketService", "stopService", [arg0]);
     },
+    disableAlerts: function (arg0, success, error) {
+        return exec(success, error, "SocketService", "disableAlerts", [arg0]);
+    },
     hasParam: function (arg0, success, error) {
         return exec(success, error, "SocketService", "hasParam", [arg0]);
     },

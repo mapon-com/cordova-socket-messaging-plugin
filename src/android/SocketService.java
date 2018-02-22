@@ -1,5 +1,6 @@
 package com.socketservice;
 
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -20,6 +21,8 @@ public class SocketService extends CordovaPlugin {
     @Override
     public void onResume(boolean multitasking) {
         broadcastBackgroundState(false);
+        NotificationManager nMgr = (NotificationManager) cordova.getActivity().getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        nMgr.cancelAll();
         Log.d("SocketService", "RESUME EVENT");
     }
 
@@ -29,10 +32,24 @@ public class SocketService extends CordovaPlugin {
         Log.d("SocketService", "PAUSE EVENT");
     }
 
+    @Override
+    public void onDestroy() {
+        disableAlerts(false);
+    }
+
     private void broadcastBackgroundState(boolean isBackground) {
         final Intent intent = new Intent(NotificationSocketService.MAIN_APP_STATE_CHANGE_EVENT);
         Bundle b = new Bundle();
         b.putBoolean("isBackground", isBackground);
+        intent.putExtras(b);
+        LocalBroadcastManager.getInstance(super.webView.getContext()).sendBroadcastSync(intent);
+    }
+
+    private void disableAlerts(boolean disable) {
+        Log.d("SocketService", "disableAlerts");
+        final Intent intent = new Intent(NotificationSocketService.ALERT_DISABLED_EVENT);
+        Bundle b = new Bundle();
+        b.putBoolean("isDisabled", disable);
         intent.putExtras(b);
         LocalBroadcastManager.getInstance(super.webView.getContext()).sendBroadcastSync(intent);
     }
@@ -79,6 +96,15 @@ public class SocketService extends CordovaPlugin {
             JSONObject langArray = new JSONObject(args.get(0).toString());
             Log.d("SocketService", langArray.toString());
             callbackContext.sendPluginResult(this.injectLangArray(langArray));
+            return true;
+        } else if (action.equals("disableAlerts")) {
+            if (args.length() != 1) {
+                return false;
+            }
+
+            boolean disable = args.getBoolean(0);
+            disableAlerts(disable);
+
             return true;
         }
 

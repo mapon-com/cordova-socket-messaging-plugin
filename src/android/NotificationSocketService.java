@@ -24,6 +24,8 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.mapon.mapongo.R;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -55,6 +57,7 @@ public class NotificationSocketService extends Service {
     private static final String BROADCAST_OUTGOING_EVENT = "outgoing.event";
 
     public static final String MAIN_APP_STATE_CHANGE_EVENT = "state.event";
+    public static final String ALERT_DISABLED_EVENT = "alert.event";
 
     private static Socket socket;
 
@@ -71,6 +74,7 @@ public class NotificationSocketService extends Service {
     private boolean mRunning = false;
 
     protected boolean mMainAppRunningForeground = true;
+    protected boolean mMainAppShowAlerts = true;
 
     private BroadcastReceiver notificationReceiver = null;
 
@@ -229,8 +233,11 @@ public class NotificationSocketService extends Service {
                                     }
 
                                     Log.d("NotificationService", "APP RUNNING BACKGROUND, SHOWING NOTIFICATION AND ALERT AND BROADCASTING");
-                                    showNotification(event, payload, notificationMessage);
-                                    showAlert(event, payload, alertMessage);
+                                    showNotification(event, payload, notificationMessage, mMainAppShowAlerts);
+
+                                    if (mMainAppShowAlerts) {
+                                        showAlert(event, payload, alertMessage);
+                                    }
                                 }
                             }
 
@@ -323,6 +330,18 @@ public class NotificationSocketService extends Service {
             }
         };
         LocalBroadcastManager.getInstance(this).registerReceiver(stateReceiver, new IntentFilter(MAIN_APP_STATE_CHANGE_EVENT));
+
+        final BroadcastReceiver alertDisabledReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                boolean isAlertsDisabled = intent.getBooleanExtra("isDisabled", true);
+
+                mMainAppShowAlerts = !isAlertsDisabled;
+
+                Log.d("NotificationService", "isBackground EVENT: " + String.valueOf(isAlertsDisabled));
+            }
+        };
+        LocalBroadcastManager.getInstance(this).registerReceiver(alertDisabledReceiver, new IntentFilter(ALERT_DISABLED_EVENT));
     }
 
     private void stopListeningBroadcasts() {
@@ -363,12 +382,18 @@ public class NotificationSocketService extends Service {
         startActivity(alertIntent);
     }
 
-    private void showNotification(String event, JSONObject payload, String alertMessage) {
+    private void showNotification(String event, JSONObject payload, String alertMessage, boolean regularPriority) {
         Language language = new Language(getApplicationContext());
         String messageTitle = language.getLanguageEntry("new_notification");
         String customMessageTitle = language.getLanguageEntry("new_" + event);
         if ((customMessageTitle != null) && (customMessageTitle.length() > 0)) {
             messageTitle = customMessageTitle;
+        }
+
+        int notifPriority = (Build.VERSION.SDK_INT < 26 ? Notification.PRIORITY_DEFAULT : NotificationManager.IMPORTANCE_DEFAULT);
+
+        if (!regularPriority) {
+            notifPriority = (Build.VERSION.SDK_INT < 26 ? Notification.PRIORITY_HIGH : NotificationManager.IMPORTANCE_HIGH);
         }
 
         String packageName = getApplicationContext().getPackageName();
@@ -379,7 +404,8 @@ public class NotificationSocketService extends Service {
                 .setWhen(System.currentTimeMillis()).setAutoCancel(true)
                 .setContentTitle(messageTitle)
                 .setDefaults(Notification.DEFAULT_ALL)
-                .setContentText(alertMessage);
+                .setContentText(alertMessage)
+                .setPriority(notifPriority);
 
         PackageManager pm = getPackageManager();
         Intent notificationIntent = pm.getLaunchIntentForPackage(packageName);
