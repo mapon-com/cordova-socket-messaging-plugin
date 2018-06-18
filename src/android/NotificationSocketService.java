@@ -160,6 +160,7 @@ public class NotificationSocketService extends Service {
                 IO.Options options = new IO.Options();
                 options.reconnection = true;
                 options.forceNew = true;
+                options.transports = new String[] {"websocket", "polling"};
                 socket = IO.socket(this.connectUrl, options);
                 Log.d("NotificationService", "SOCKET OPENED WITH URL: " + this.connectUrl);
                 socket.on(Socket.EVENT_RECONNECT, new Emitter.Listener() {
@@ -180,6 +181,50 @@ public class NotificationSocketService extends Service {
                     @Override
                     public void call(Object... args) {
                         Log.d("NotificationService", "EVENT_DISCONNECT");
+                    }
+                });
+                socket.on("messaging", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        try {
+                            Log.d("NotificationService", "EVENT INCOMING DATA");
+                            if (args.length > 0) {
+                                Ack ack = (Ack) args[args.length - 1];
+                                if (ack != null) {
+                                    ack.call();
+                                }
+                            }
+
+                            JSONObject eventData = new JSONObject(args[0].toString());
+                            String event = eventData.getString("type");
+                            boolean alert = !eventData.isNull("alert");
+                            String alertMessage = null;
+                            String notificationMessage = null;
+                            if (alert) {
+                                JSONObject alertData = eventData.getJSONObject("alert");
+                                alertMessage = notificationMessage = alertData.optString("title", "empty message");
+                            }
+                            Log.d("NotificationService", "EVENT " + event);
+                            Log.d("NotificationService", "PAYLOAD " + eventData.toString());
+
+                            if (isMainAppForeground()) {
+                                Log.d("NotificationService", "APP RUNNING FOREGROUND, BROADCASTING EVENT");
+                                broadcastEvent(event, eventData);
+                            } else {
+                                if (alert) {
+                                    Log.d("NotificationService", "APP RUNNING BACKGROUND, SHOWING NOTIFICATION AND ALERT AND BROADCASTING");
+                                    showNotification(event, eventData, notificationMessage, mMainAppShowAlerts);
+
+                                    if (mMainAppShowAlerts) {
+                                        showAlert(event, eventData, alertMessage);
+                                    }
+                                }
+                            }
+
+                            wakeUp();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
                 socket.on("data", new Emitter.Listener() {
