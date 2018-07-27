@@ -4,6 +4,7 @@ import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.KeyguardManager;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -141,11 +142,24 @@ public class NotificationSocketService extends Service {
 
         appName = getApplicationName();
 
-        Notification notification = new NotificationCompat.Builder(this, appName.replaceAll(" ", "_") + "_channel")
+        String channelId = appName.replaceAll(" ", "_") + "_channel";
+        String channelName = appName.replaceAll(" ", "_") + "_name";
+        NotificationManager nManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel mChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT);
+            nManager.createNotificationChannel(mChannel);
+        }
+
+        Notification notification = new NotificationCompat.Builder(this)
+                .setChannelId(channelId)
                 .setContentTitle(appName)
                 .setContentText("Service running")
                 .setSmallIcon(R.drawable.ic_go_colour)
                 .setPriority(Notification.PRIORITY_MIN)
+                .setVibrate(null)
+                .setSound(null)
                 .setOngoing(true).build();
 
         startForeground(101, notification);
@@ -160,8 +174,9 @@ public class NotificationSocketService extends Service {
                 IO.Options options = new IO.Options();
                 options.reconnection = true;
                 options.forceNew = true;
-                options.transports = new String[] {"websocket", "polling"};
+                //options.transports = new String[] {"websocket", "polling"};
                 socket = IO.socket(this.connectUrl, options);
+
                 Log.d("NotificationService", "SOCKET OPENED WITH URL: " + this.connectUrl);
                 socket.on(Socket.EVENT_RECONNECT, new Emitter.Listener() {
                     @Override
@@ -183,6 +198,13 @@ public class NotificationSocketService extends Service {
                         Log.d("NotificationService", "EVENT_DISCONNECT");
                     }
                 });
+                socket.on("heartbeat_ping", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        Log.d("NotificationService", "EVENT_PONG");
+                        socket.emit("heartbeat_pong");
+                    }
+                });
                 socket.on("messaging", new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
@@ -194,16 +216,9 @@ public class NotificationSocketService extends Service {
                                     ack.call();
                                 }
                             }
-
                             JSONObject eventData = new JSONObject(args[0].toString());
                             String event = eventData.getString("type");
-                            boolean alert = !eventData.isNull("alert");
-                            String alertMessage = null;
-                            String notificationMessage = null;
-                            if (alert) {
-                                JSONObject alertData = eventData.getJSONObject("alert");
-                                alertMessage = notificationMessage = alertData.optString("title", "empty message");
-                            }
+
                             Log.d("NotificationService", "EVENT " + event);
                             Log.d("NotificationService", "PAYLOAD " + eventData.toString());
 
@@ -211,7 +226,15 @@ public class NotificationSocketService extends Service {
                                 Log.d("NotificationService", "APP RUNNING FOREGROUND, BROADCASTING EVENT");
                                 broadcastEvent(event, eventData);
                             } else {
+                                boolean alert = !eventData.isNull("alert");
+
                                 if (alert) {
+                                    Language language = new Language(getApplicationContext());
+                                    JSONObject alertData = eventData.getJSONObject("alert");
+                                    JSONObject placeholders = alertData.getJSONObject("titlePlaceholders");
+                                    String alertMessage, notificationMessage;
+                                    alertMessage = notificationMessage = language.getLanguageEntry(alertData.getString("title"), placeholders);
+
                                     Log.d("NotificationService", "APP RUNNING BACKGROUND, SHOWING NOTIFICATION AND ALERT AND BROADCASTING");
                                     showNotification(event, eventData, notificationMessage, mMainAppShowAlerts);
 
@@ -257,7 +280,6 @@ public class NotificationSocketService extends Service {
                                 broadcastEvent(event, payload);
                             } else {
                                 if (alert) {
-
                                     boolean undeliveredEvent = payload.optBoolean("unsent", false);
                                     if (undeliveredEvent) {
                                         Language language = new Language(getApplicationContext());

@@ -41,8 +41,21 @@ class Language {
         editor.apply();
     }
 
-    String getLanguageEntry(String name) {
+    String getLanguageEntry(String name, JSONObject... values) {
         SharedPreferences settings = this.context.getSharedPreferences(PREFS_NAME, 0);
-        return settings.getString(name, null);
+
+        if (values.length > 0) {
+            String result = settings.getString(name, "");
+            JSONObject placeholders = values[0];
+            Iterator<String> iter = placeholders.keys();
+            while (iter.hasNext()) {
+                String key = iter.next();
+                result = result.replaceFirst("%" + key + "%", placeholders.optString(key, ""));
+            }
+
+            return result;
+        } else {
+            return settings.getString(name, null);
+        }
     }
 }
