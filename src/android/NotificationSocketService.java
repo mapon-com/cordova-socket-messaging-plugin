@@ -132,37 +132,38 @@ public class NotificationSocketService extends Service {
             mRunning = true;
             connect();
             listenBroadcasts();
+
+            appName = getApplicationName();
+
+            String channelId = appName.replaceAll(" ", "_") + "_channel";
+            String channelName = appName.replaceAll(" ", "_") + "_name";
+            NotificationManager nManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                NotificationChannel mChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT);
+                nManager.createNotificationChannel(mChannel);
+            }
+
+            Notification notification = new NotificationCompat.Builder(this)
+                    .setChannelId(channelId)
+                    .setContentTitle(appName)
+                    .setContentText("Service running")
+                    .setSmallIcon(R.drawable.ic_go_colour)
+                    .setPriority(Notification.PRIORITY_MIN)
+                    .setVibrate(null)
+                    .setSound(null)
+                    .setOngoing(true).build();
+
+            startForeground(101, notification);
         } else if (action.equals(ACTION_STOP)) {
             if (mRunning) {
                 disconnect();
                 stopListeningBroadcasts();
+                stopForeground(true);
                 stopSelf();
             }
         }
-
-        appName = getApplicationName();
-
-        String channelId = appName.replaceAll(" ", "_") + "_channel";
-        String channelName = appName.replaceAll(" ", "_") + "_name";
-        NotificationManager nManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
-
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            NotificationChannel mChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT);
-            nManager.createNotificationChannel(mChannel);
-        }
-
-        Notification notification = new NotificationCompat.Builder(this)
-                .setChannelId(channelId)
-                .setContentTitle(appName)
-                .setContentText("Service running")
-                .setSmallIcon(R.drawable.ic_go_colour)
-                .setPriority(Notification.PRIORITY_MIN)
-                .setVibrate(null)
-                .setSound(null)
-                .setOngoing(true).build();
-
-        startForeground(101, notification);
 
         return super.onStartCommand(intent, flags, startId);
     }
