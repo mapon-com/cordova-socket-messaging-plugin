@@ -15,6 +15,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -141,7 +142,7 @@ public class NotificationSocketService extends Service {
 
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                NotificationChannel mChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT);
+                NotificationChannel mChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW);
                 nManager.createNotificationChannel(mChannel);
             }
 
@@ -150,6 +151,7 @@ public class NotificationSocketService extends Service {
                     .setContentTitle(appName)
                     .setContentText("Service running")
                     .setSmallIcon(R.drawable.ic_go_colour)
+                    .setColor(Color.parseColor("#98CA02"))
                     .setPriority(Notification.PRIORITY_MIN)
                     .setVibrate(null)
                     .setSound(null)
