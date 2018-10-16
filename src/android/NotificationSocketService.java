@@ -67,6 +67,8 @@ public class NotificationSocketService extends Service {
     private static Integer port;
 
     private static String appName = "Driver App";
+    private static String packageName = "com.mapon.mapongo";
+    private static PackageManager pm = null;
 
     private String connectUrl;
 
@@ -135,21 +137,26 @@ public class NotificationSocketService extends Service {
             listenBroadcasts();
 
             appName = getApplicationName();
+            packageName = getPackageName();
+            pm = getPackageManager();
 
             String channelId = appName.replaceAll(" ", "_") + "_channel";
             String channelName = appName.replaceAll(" ", "_") + "_name";
             NotificationManager nManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
-
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 NotificationChannel mChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW);
                 nManager.createNotificationChannel(mChannel);
             }
 
+            Intent notificationIntent = pm.getLaunchIntentForPackage(packageName);
+
             Notification notification = new NotificationCompat.Builder(this)
                     .setChannelId(channelId)
                     .setContentTitle(appName)
                     .setContentText("Service running")
+                    .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0,
+                        notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT))
                     .setSmallIcon(R.drawable.ic_go_colour)
                     .setColor(Color.parseColor("#98CA02"))
                     .setPriority(Notification.PRIORITY_MIN)
@@ -466,8 +473,6 @@ public class NotificationSocketService extends Service {
             notifPriority = (Build.VERSION.SDK_INT < 26 ? Notification.PRIORITY_HIGH : NotificationManager.IMPORTANCE_HIGH);
         }
 
-        String packageName = getApplicationContext().getPackageName();
-
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), appName.replaceAll(" ", "_") + "_channel");
         builder
                 .setSmallIcon(R.drawable.ic_go_colour)
@@ -477,7 +482,6 @@ public class NotificationSocketService extends Service {
                 .setContentText(alertMessage)
                 .setPriority(notifPriority);
 
-        PackageManager pm = getPackageManager();
         Intent notificationIntent = pm.getLaunchIntentForPackage(packageName);
 
         notificationIntent.putExtra("event", event);
