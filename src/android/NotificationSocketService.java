@@ -61,6 +61,7 @@ public class NotificationSocketService extends Service {
     public static final String MAIN_APP_STATE_CHANGE_EVENT = "state.event";
     public static final String ALERT_DISABLED_EVENT = "alert.event";
 
+    public static Boolean userSocketAuthorized = false;
     private static Socket socket;
 
     private static String host;
@@ -158,7 +159,7 @@ public class NotificationSocketService extends Service {
                     .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0,
                         notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT))
                     .setSmallIcon(R.drawable.ic_go_colour)
-                    .setColor(Color.parseColor("#98CA02"))
+                    .setColor(Color.parseColor("#98ca02"))
                     .setPriority(Notification.PRIORITY_MIN)
                     .setVibrate(null)
                     .setSound(null)
@@ -205,7 +206,29 @@ public class NotificationSocketService extends Service {
                 socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
+                        userSocketAuthorized = false;
                         Log.d("NotificationService", "EVENT_DISCONNECT");
+                    }
+                });
+                socket.on("user_connected", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        userSocketAuthorized = true;
+                        try {
+                            Log.d("NotificationService", "EVENT_USER_CONNECTED");
+
+                            JSONObject payload = new JSONObject();
+                            payload.put("type", "user_connected");
+
+                            if (isMainAppForeground()) {
+                                Log.d("NotificationService", "APP RUNNING FOREGROUND, BROADCASTING EVENT");
+                                broadcastEvent("user_connected", payload);
+                            }
+
+                            wakeUp();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
                 socket.on("heartbeat_ping", new Emitter.Listener() {

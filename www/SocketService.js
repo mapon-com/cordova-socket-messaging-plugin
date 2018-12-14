@@ -20,6 +20,9 @@ var socketservice = {
     getParam: function (arg0, success, error) {
         return exec(success, error, "SocketService", "getParam", [arg0]);
     },
+    isSocketAuthorized: function (success, error) {
+        return exec(success, error, "SocketService", "isSocketAuthorized", []);
+    },
     _channels: {},
     createEvent: function(type, data) {
         var event = document.createEvent('Event');

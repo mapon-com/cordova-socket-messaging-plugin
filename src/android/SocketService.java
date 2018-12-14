@@ -106,6 +106,10 @@ public class SocketService extends CordovaPlugin {
             disableAlerts(disable);
 
             return true;
+        } else if (action.equals("isSocketAuthorized")) {
+            callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, NotificationSocketService.userSocketAuthorized));
+
+            return true;
         }
 
         return false;
