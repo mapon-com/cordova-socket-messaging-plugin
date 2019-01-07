@@ -219,11 +219,7 @@ public class NotificationSocketService extends Service {
 
                             JSONObject payload = new JSONObject();
                             payload.put("type", "user_connected");
-
-                            if (isMainAppForeground()) {
-                                Log.d("NotificationService", "APP RUNNING FOREGROUND, BROADCASTING EVENT");
-                                broadcastEvent("user_connected", payload);
-                            }
+                            broadcastEvent("user_connected", payload);
 
                             wakeUp();
                         } catch (JSONException e) {
@@ -308,10 +304,9 @@ public class NotificationSocketService extends Service {
                             Log.d("NotificationService", "EVENT " + event);
                             Log.d("NotificationService", "PAYLOAD " + payload.toString());
 
-                            if (isMainAppForeground()) {
-                                Log.d("NotificationService", "APP RUNNING FOREGROUND, BROADCASTING EVENT");
-                                broadcastEvent(event, payload);
-                            } else {
+                            broadcastEvent(event, payload);
+
+                            if (!isMainAppForeground()) {
                                 if (alert) {
                                     boolean undeliveredEvent = payload.optBoolean("unsent", false);
                                     if (undeliveredEvent) {
@@ -362,11 +357,7 @@ public class NotificationSocketService extends Service {
 
             JSONObject payload = new JSONObject();
             payload.put("type", Socket.EVENT_CONNECT);
-
-            if (isMainAppForeground()) {
-                Log.d("NotificationService", "APP RUNNING FOREGROUND, BROADCASTING EVENT");
-                broadcastEvent("socket_event", payload);
-            }
+            broadcastEvent("socket_event", payload);
 
             wakeUp();
         } catch (JSONException e) {
