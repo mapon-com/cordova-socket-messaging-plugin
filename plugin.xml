@@ -28,8 +28,8 @@
                     android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
                     android:label="@string/app_name"
                     android:launchMode="singleTask"
-                    android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar">
-                    android:exported="false"
+                    android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar"
+                    android:exported="false">
             </activity>
         </config-file>
 
