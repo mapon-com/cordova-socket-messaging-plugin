@@ -3,6 +3,7 @@
     version="0.0.1"
     xmlns="http://apache.org/cordova/ns/plugins/1.0">
     <name>SocketService</name>
+    <preference name="SOCKET_IO_CLIENT_VER" default="+"/>
     <js-module name="SocketService" src="www/SocketService.js">
         <clobbers target="socketservice" />
     </js-module>
@@ -46,6 +47,6 @@
         <source-file src="src/android/Language.java"
                      target-dir="src/com/socketservice" />
 
-        <framework src="io.socket:socket.io-client:+" />
+        <framework src="io.socket:socket.io-client:$SOCKET_IO_CLIENT_VER" />
     </platform>
 </plugin>
